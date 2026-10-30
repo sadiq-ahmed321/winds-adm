@@ -1,265 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADM | WINDS-DEV</title>
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-<!-- EmailJS SDK -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script type="text/javascript">
-   (function(){
-      emailjs.init("--KaeiPgLeJyHPRdj");
-   })();
-</script>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-body { background-color: #f6f3eb; color: #222222; padding: 20px; }
-
-.admin-container { max-width: 800px; margin: 0 auto; }
-.admin-title { text-align: center; font-size: 2rem; font-weight: 900; color: #e63946; margin-bottom: 25px; letter-spacing: 1px; text-transform: uppercase; }
-
-.search-box { position: relative; margin-bottom: 15px; }
-.search-box input { width: 100%; padding: 14px 20px 14px 45px; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; font-size: 1rem; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-.search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666055; font-size: 1.1rem; }
-
-.filters-bar { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; }
-.filter-btn { background: #eae4d7; border: 1px solid #dcd3c1; color: #222222; padding: 8px 18px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-.filter-btn.active, .filter-btn:hover { background: #e63946; color: #ffffff; border-color: #e63946; }
-
-.tickets-list { display: flex; flex-direction: column; gap: 20px; }
-
-.ticket-card { background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; padding: 20px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; border-left: 6px solid #e63946; }
-.ticket-card.tech { border-left-color: #ffb703; }
-.ticket-card.report { border-left-color: #e63946; }
-
-.ticket-header { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
-.ticket-info { font-size: 0.95rem; color: #444444; margin-bottom: 8px; line-height: 1.5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ticket-info strong { color: #111111; font-weight: 700; }
-
-/* Status Badge Styles */
-.badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
-.badge-unchecked { background-color: #f97316; } 
-.badge-waiting { background-color: #eab308; }   
-.badge-closed { background-color: #ef4444; }    
-
-.ticket-actions { margin-top: 15px; display: flex; gap: 10px; border-top: 1px solid #f0ede6; padding-top: 12px; flex-wrap: wrap; }
-.action-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; border: none; color: #ffffff; transition: 0.2s; }
-.btn-review { background-color: #e63946; } 
-.btn-review:hover { background-color: #d62828; }
-.btn-close-action { background-color: #f97316; } 
-.btn-close-action:hover { background-color: #ea580c; }
-
-/* Review Detail View Styles */
-#reviewDetailView { display: none; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.back-btn { display: inline-flex; align-items: center; gap: 8px; background: #eae4d7; border: 1px solid #dcd3c1; color: #222; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
-.review-content { font-size: 1.05rem; line-height: 1.6; color: #333; margin-bottom: 25px; }
-.review-content p { margin-bottom: 12px; }
-.review-content strong { color: #111; font-weight: 800; }
-
-.btn-green-answer { background-color: #22c55e; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; float: right; transition: 0.2s; }
-.btn-green-answer:hover { background-color: #16a34a; }
-
-.answer-box-wrap { display: none; margin-top: 25px; border-top: 1px solid #dcd3c1; padding-top: 20px; }
-.answer-box-wrap textarea { width: 100%; height: 150px; padding: 15px; border: 1px solid #dcd3c1; border-radius: 10px; font-size: 1rem; outline: none; resize: vertical; margin-bottom: 15px; }
-.btn-send-mail { background-color: #e63946; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; float: right; transition: 0.2s; }
-.btn-send-mail:hover { background-color: #d62828; }
-
-.no-tickets { text-align: center; padding: 40px; color: #666055; font-size: 1.1rem; font-weight: 600; background: #ffffff; border-radius: 12px; border: 1px solid #dcd3c1; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WINDS-DEV Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: #0f1015;
+            color: #ffffff;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #2a2b36;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        header h1 {
+            font-size: 1.5rem;
+            color: #e63946;
+            letter-spacing: 1px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            background-color: #171821;
+            border: 1px solid #2a2b36;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #a0a0c0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #2a2b36;
+            font-size: 0.95rem;
+        }
+        th {
+            color: #8c8f9e;
+            background-color: #1f2029;
+        }
+        .btn {
+            background-color: #e63946;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            background-color: #d90429;
+        }
+        .btn-secondary {
+            background-color: #2a2b36;
+            color: #fff;
+            margin-right: 10px;
+        }
+        .btn-secondary:hover {
+            background-color: #3b3c4a;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            background-color: #0f1015;
+            border: 1px solid #2a2b36;
+            border-radius: 6px;
+            color: #fff;
+            padding: 12px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge-open { background-color: #ffb703; color: #000; }
+        .badge-closed { background-color: #2b9348; color: #fff; }
+        
+        #replySection {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-<div class="admin-container">
-    <h1 class="admin-title">ADM | WINDS-DEV</h1>
+    <div class="container">
+        <header>
+            <h1>𝚁𝙰𝚉𝙴™ - BOT : ADMIN PANEL</h1>
+            <button class="btn btn-secondary" onclick="loadTickets()">Refresh Tickets</button>
+        </header>
 
-    <!-- MAIN DASHBOARD VIEW -->
-    <div id="mainDashboardView">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="adminSearch" placeholder="Search by name, email, or issue..." oninput="filterTickets()">
+        <!-- Tickets List View -->
+        <div id="dashboardView" class="card">
+            <h2>Support Tickets Management</h2>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Issue Type</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketTableBody">
+                        <!-- Dynamic tickets will load here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div class="filters-bar">
-            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-            <button class="filter-btn" onclick="setFilter('Tech-Issue', this)">Tech-Issue</button>
-            <button class="filter-btn" onclick="setFilter('Report', this)">Report</button>
-        </div>
-
-        <div class="tickets-list" id="ticketsContainer">
-            <!-- Tickets loaded dynamically -->
+        <!-- Reply View -->
+        <div id="replySection" class="card">
+            <h2>Reply to Ticket</h2>
+            <p style="margin-bottom: 10px; color: #b0b0d0;" id="userInfoDisplay"></p>
+            <textarea id="adminAnswerText" placeholder="Write your professional response here..."></textarea>
+            <div>
+                <button class="btn btn-secondary" onclick="goBackToDashboard()">Cancel</button>
+                <button class="btn" onclick="executeSendMail()">Send Mail & Close Ticket</button>
+            </div>
         </div>
     </div>
 
-    <!-- REVIEW DETAIL VIEW -->
-    <div id="reviewDetailView">
-        <button class="back-btn" onclick="goBackToDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <div class="review-content" id="reviewContentBody">
-            <!-- Dynamic Ticket Details -->
-        </div>
-    </div>
-</div>
+    <script>
+        let currentActiveTicketId = null;
+        let selectedUserEmail = '';
+        let selectedUserName = '';
 
-<script>
-let currentFilter = 'all';
-let currentActiveTicketId = null;
+        // Load tickets on page startup
+        window.onload = function() {
+            loadTickets();
+        };
 
-function loadTickets() {
-    const container = document.getElementById('ticketsContainer');
-    
-    const dummyTickets = [
-        { id: 1, type: 'Tech-Issue', name: 'Sadiq_Ahmed', email: 'notsk342@gmail.com', issue: 'WEBSITE ISSUE', time: '30/10/2026, 14:00:00', status: ['unchecked', 'waiting'], desc: 'Google login redirect issue on mobile browser while testing kiwi browser.' },
-        { id: 2, type: 'Report', name: 'THUNDER', email: 'player123@gmail.com', issue: 'HACKING / CHEATING', time: '30/10/2026, 14:05:00', status: ['unchecked', 'waiting'], desc: 'Player was using speedhack in match near training ground.' }
-    ];
-    
-    if (!localStorage.getItem('winds_tickets')) {
-        localStorage.setItem('winds_tickets', JSON.stringify(dummyTickets));
-    }
+        function loadTickets() {
+            const tbody = document.getElementById('ticketTableBody');
+            tbody.innerHTML = '';
 
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-    container.innerHTML = '';
-    const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
-
-    const filtered = tickets.filter(t => {
-        const matchesFilter = currentFilter === 'all' || t.type === currentFilter;
-        const matchesSearch = t.name.toLowerCase().includes(searchQuery) || 
-                              t.email.toLowerCase().includes(searchQuery) || 
-                              t.issue.toLowerCase().includes(searchQuery);
-        return matchesFilter && matchesSearch;
-    });
-
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="no-tickets">No tickets found.</div>`;
-        return;
-    }
-
-    filtered.forEach((t) => {
-        const cardClass = t.type === 'Tech-Issue' ? 'tech' : 'report';
-        
-        let statusHTML = '';
-        if (t.status === 'Closed' || t.status === 'closed') {
-            statusHTML = `<span class="badge badge-closed">Closed</span>`;
-        } else {
-            statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
-        }
-
-        const card = document.createElement('div');
-        card.className = `ticket-card ${cardClass}`;
-        card.innerHTML = `
-            <div class="ticket-header">#${t.id} - ${t.name}</div>
-            <div class="ticket-info"><strong>Email -</strong> ${t.email}</div>
-            <div class="ticket-info"><strong>Issue -</strong> ${t.issue}</div>
-            <div class="ticket-info"><strong>Time -</strong> ${t.time}</div>
-            <div class="ticket-info"><strong>Status -</strong> ${statusHTML}</div>
-            
-            <div class="ticket-actions">
-                <button class="action-btn btn-review" onclick="openReview(${t.id})">Review</button>
-                <button class="action-btn btn-close-action" onclick="updateStatus(${t.id}, 'close')">Close</button>
-            </div>
-        `;
-        container.appendChild(card);
-    });
-}
-
-function openReview(id) {
-    currentActiveTicketId = id;
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-    const t = tickets.find(ticket => ticket.id === id);
-    if (!t) return;
-
-    document.getElementById('mainDashboardView').style.display = 'none';
-    document.getElementById('reviewDetailView').style.display = 'block';
-
-    const reviewBody = document.getElementById('reviewContentBody');
-    reviewBody.innerHTML = `
-        <p><strong>USER NAME -</strong> ${t.name}</p>
-        <p><strong>USER ISSUE -</strong> ${t.issue}</p>
-        <p><strong>DESCRIPTION -</strong><br>${t.desc || 'No description provided.'}</p>
-        <div style="margin-top: 20px; overflow: hidden;">
-            <button class="btn-green-answer" onclick="toggleAnswerBox()">Answer</button>
-        </div>
-        <div class="answer-box-wrap" id="answerBoxContainer">
-            <textarea id="adminAnswerText" placeholder="Write your answer here..."></textarea>
-            <div style="overflow: hidden;">
-                <button class="btn-send-mail" onclick="sendAnswerMail('${t.email}', '${t.name}')">SEND</button>
-            </div>
-        </div>
-    `;
-    window.scrollTo(0, 0);
-}
-
-function toggleAnswerBox() {
-    const box = document.getElementById('answerBoxContainer');
-    box.style.display = box.style.display === 'block' ? 'none' : 'block';
-}
-
-function sendAnswerMail(userEmail, userName) {
-    const answerText = document.getElementById('adminAnswerText').value;
-    if (!answerText.trim()) {
-        alert('Please write an answer before sending!');
-        return;
-    }
-
-    const templateParams = {
-        to_email: userEmail,
-        to_name: userName,
-        message: answerText
-    };
-
-    emailjs.send('service_mnyq4vg', 'template_jy3rdbm', templateParams)
-        .then(function(response) {
-            alert('Mail sent successfully from developmentwinds@gmail.com!');
-            
             let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-            tickets = tickets.map(t => {
-                if (t.id === currentActiveTicketId) {
-                    t.status = 'Closed';
-                }
-                return t;
-            });
-            localStorage.setItem('winds_tickets', JSON.stringify(tickets));
 
-            goBackToDashboard();
-        }, function(error) {
-            alert('EMAILJS ERROR: ' + JSON.stringify(error));
-            console.error('FAILED...', error);
-        });
-}
-
-function goBackToDashboard() {
-    document.getElementById('reviewDetailView').style.display = 'none';
-    document.getElementById('mainDashboardView').style.display = 'block';
-    currentActiveTicketId = null;
-    loadTickets();
-}
-
-function updateStatus(id, action) {
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-    tickets = tickets.map(t => {
-        if (t.id === id) {
-            if (action === 'close') {
-                t.status = 'Closed';
+            if (tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #777;">No support tickets found.</td></tr>`;
+                return;
             }
+
+            tickets.forEach(ticket => {
+                const tr = document.createElement('tr');
+                const badgeClass = ticket.status === 'Closed' ? 'badge-closed' : 'badge-open';
+                
+                tr.innerHTML = `
+                    <td>${ticket.name || 'Anonymous'}</td>
+                    <td>${ticket.issueType || 'OTHER'}</td>
+                    <td><span class="badge ${badgeClass}">${ticket.status || 'Open'}</span></td>
+                    <td>
+                        <button class="btn" onclick="openReplyPanel('${ticket.id}', '${ticket.email}', '${ticket.name}')">Reply</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
-        return t;
-    });
-    localStorage.setItem('winds_tickets', JSON.stringify(tickets));
-    loadTickets();
-}
 
-function setFilter(filter, btn) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadTickets();
-}
+        function openReplyPanel(id, email, name) {
+            currentActiveTicketId = id;
+            selectedUserEmail = email;
+            selectedUserName = name;
 
-function filterTickets() {
-    loadTickets();
-}
+            document.getElementById('userInfoDisplay').innerHTML = `Replying to: <strong>${name}</strong> (${email}) | Issue ID: ${id}`;
+            document.getElementById('adminAnswerText').value = '';
+            
+            document.getElementById('dashboardView').style.display = 'none';
+            document.getElementById('replySection').style.display = 'block';
+        }
 
-window.onload = loadTickets;
-</script>
+        function goBackToDashboard() {
+            document.getElementById('replySection').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'block';
+            loadTickets();
+        }
 
+        function executeSendMail() {
+            sendAnswerMail(selectedUserEmail, selectedUserName);
+        }
+
+        // Brevo API Integration Function (0% Watermark & Direct Inbox Delivery)
+        function sendAnswerMail(userEmail, userName) {
+            const answerText = document.getElementById('adminAnswerText').value;
+            if (!answerText.trim()) {
+                alert('Please write an answer before sending!');
+                return;
+            }
+
+            const BREVO_API_KEY = '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';
+
+            const payload = {
+                sender: {
+                    name: "WINDS Development",
+                    email: "developmentwinds@gmail.com"
+                },
+                to: [
+                    {
+                        email: userEmail,
+                        name: userName
+                    }
+                ],
+                subject: "Response to your Support Ticket | WINDS-DEV",
+                htmlContent: `
+                    <div style="font-family: Arial, sans-serif; color: #222222; padding: 20px; line-height: 1.6;">
+                        <p>Hello Dear,</p>
+                        <p><strong>${userName}</strong></p>
+                        
+                        <div style="margin: 20px 0; font-size: 1rem; color: #333333;">
+                            ${answerText}
+                        </div>
+                        
+                        <div style="margin-top: 30px;">
+                            <a href="https://dc.gg/winds.dev" target="_blank" style="background-color: #e63946; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">
+                                MEET US
+                            </a>
+                        </div>
+                    </div>
+                `
+            };
+
+            fetch('https://api.brevo.com/v3/smtp/email', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': BREVO_API_KEY,
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.messageId) {
+                    alert('Mail sent successfully via Brevo!');
+
+                    // Update ticket status to Closed in localStorage
+                    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
+                    tickets = tickets.map(t => {
+                        if (t.id === currentActiveTicketId) {
+                            t.status = 'Closed';
+                        }
+                        return t;
+                    });
+                    localStorage.setItem('winds_tickets', JSON.stringify(tickets));
+
+                    goBackToDashboard();
+                } else {
+                    alert('BREVO ERROR: ' + JSON.stringify(data));
+                }
+            })
+            .catch(error => {
+                alert('FETCH ERROR: ' + error.message);
+            });
+        }
+    </script>
 </body>
 </html>

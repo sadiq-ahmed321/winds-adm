@@ -221,7 +221,7 @@ function sendAnswerMail(userEmail, userName) {
 
             goBackToDashboard();
         }, function(error) {
-            alert('Failed to send mail. Please check EmailJS configuration.');
+            alert('EMAILJS ERROR: ' + JSON.stringify(error));
             console.error('FAILED...', error);
         });
 }

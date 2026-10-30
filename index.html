@@ -33,13 +33,11 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 
 .ticket-card { background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; padding: 20px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; border-left: 6px solid #e63946; }
 .ticket-card.tech { border-left-color: #ffb703; }
-.ticket-card.report { border-left-color: #e63946; }
 
 .ticket-header { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
 .ticket-info { font-size: 0.95rem; color: #444444; margin-bottom: 8px; line-height: 1.5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ticket-info strong { color: #111111; font-weight: 700; }
 
-/* Status Badge Styles */
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 .badge-unchecked { background-color: #f97316; } 
 .badge-waiting { background-color: #eab308; }   
@@ -52,7 +50,6 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .btn-close-action { background-color: #f97316; } 
 .btn-close-action:hover { background-color: #ea580c; }
 
-/* Review Detail View Styles */
 #reviewDetailView { display: none; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 .back-btn { display: inline-flex; align-items: center; gap: 8px; background: #eae4d7; border: 1px solid #dcd3c1; color: #222; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
 .review-content { font-size: 1.05rem; line-height: 1.6; color: #333; margin-bottom: 25px; }
@@ -75,7 +72,6 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 <div class="admin-container">
     <h1 class="admin-title">ADM | WINDS-DEV</h1>
 
-    <!-- MAIN DASHBOARD VIEW -->
     <div id="mainDashboardView">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -88,22 +84,16 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
             <button class="filter-btn" onclick="setFilter('Report', this)">Report</button>
         </div>
 
-        <div class="tickets-list" id="ticketsContainer">
-            <!-- Tickets loaded dynamically from Supabase -->
-        </div>
+        <div class="tickets-list" id="ticketsContainer"></div>
     </div>
 
-    <!-- REVIEW DETAIL VIEW -->
     <div id="reviewDetailView">
         <button class="back-btn" onclick="goBackToDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <div class="review-content" id="reviewContentBody">
-            <!-- Dynamic Ticket Details -->
-        </div>
+        <div class="review-content" id="reviewContentBody"></div>
     </div>
 </div>
 
 <script>
-// Supabase Configuration
 const SUPABASE_URL = 'https://boqabjzjfzjudcmzhzac.supabase.co';
 const SUPABASE_PUB_KEY = 'sb_publishable_2tkZzCP-Tc3a8OQJzbuTWg_qGsX-7D0';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUB_KEY);
@@ -118,8 +108,7 @@ async function loadTickets() {
 
     const { data: tickets, error } = await supabaseClient
         .from('tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
     if (error) {
         container.innerHTML = `<div class="no-tickets" style="color:red;">Error loading tickets: ${error.message}</div>`;
@@ -136,12 +125,10 @@ function renderFilteredTickets() {
     const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
 
     const filtered = allTicketsCache.filter(t => {
-        // Map issue type or category if needed
-        const matchesFilter = currentFilter === 'all' || (t.issue_type && t.issue_type.includes(currentFilter));
         const matchesSearch = (t.name && t.name.toLowerCase().includes(searchQuery)) || 
                               (t.message && t.message.toLowerCase().includes(searchQuery)) || 
                               (t.issue_type && t.issue_type.toLowerCase().includes(searchQuery));
-        return matchesFilter && matchesSearch;
+        return matchesSearch;
     });
 
     if (filtered.length === 0) {
@@ -150,8 +137,6 @@ function renderFilteredTickets() {
     }
 
     filtered.forEach((t) => {
-        const cardClass = 'tech';
-        
         let statusHTML = '';
         if (t.status === 'Closed' || t.status === 'closed') {
             statusHTML = `<span class="badge badge-closed">Closed</span>`;
@@ -160,11 +145,10 @@ function renderFilteredTickets() {
         }
 
         const card = document.createElement('div');
-        card.className = `ticket-card ${cardClass}`;
+        card.className = `ticket-card tech`;
         card.innerHTML = `
             <div class="ticket-header">Ticket #${t.id} - ${t.name || 'Anonymous'}</div>
             <div class="ticket-info"><strong>Issue Type -</strong> ${t.issue_type || 'GENERAL'}</div>
-            <div class="ticket-info"><strong>Time -</strong> ${new Date(t.created_at).toLocaleString()}</div>
             <div class="ticket-info"><strong>Status -</strong> ${statusHTML}</div>
             
             <div class="ticket-actions">
@@ -188,7 +172,6 @@ function openReview(id) {
     reviewBody.innerHTML = `
         <p><strong>USER NAME -</strong> ${t.name || 'Anonymous'}</p>
         <p><strong>ISSUE TYPE -</strong> ${t.issue_type || 'GENERAL'}</p>
-        <p><strong>SUBMITTED AT -</strong> ${new Date(t.created_at).toLocaleString()}</p>
         <p><strong>MESSAGE / DESCRIPTION -</strong><br>${t.message || 'No description provided.'}</p>
         <div style="margin-top: 20px; overflow: hidden;">
             <button class="btn-green-answer" onclick="toggleAnswerBox()">Answer</button>
@@ -215,7 +198,6 @@ async function sendAnswerMail(userName) {
         return;
     }
 
-    // Update status in Supabase to Closed
     const { error } = await supabaseClient
         .from('tickets')
         .update({ status: 'Closed' })
@@ -226,7 +208,7 @@ async function sendAnswerMail(userName) {
         return;
     }
 
-    alert('Ticket marked as Closed successfully in database!');
+    alert('Ticket marked as Closed successfully!');
     goBackToDashboard();
 }
 

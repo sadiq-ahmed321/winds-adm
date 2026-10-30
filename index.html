@@ -186,7 +186,7 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-// Resend API Integration Function (0% Watermark & No Phone Lock)
+// Resend API Integration Function
 function sendAnswerMail(userEmail, userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
@@ -194,7 +194,7 @@ function sendAnswerMail(userEmail, userName) {
         return;
     }
 
-    const RESEND_API_KEY = 're_DUrRxFL1_DLxPa4UxDXS4YCEvkMv7QWz6';
+    const RESEND_API_KEY = 're_iP3Vzzvu_DGBCStk3i4BDxPxz5ireSLAK';
 
     const payload = {
         from: 'WINDS Development <onboarding@resend.dev>',
@@ -227,7 +227,7 @@ function sendAnswerMail(userEmail, userName) {
     .then(response => response.json())
     .then(data => {
         if (data.id) {
-            alert('Mail sent successfully via Resend (No Watermark)!');
+            alert('Mail sent successfully via Resend!');
             
             let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
             tickets = tickets.map(t => {

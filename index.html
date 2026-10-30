@@ -30,7 +30,6 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .ticket-info { font-size: 0.95rem; color: #444444; margin-bottom: 8px; line-height: 1.5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ticket-info strong { color: #111111; font-weight: 700; }
 
-/* Status Badge Styles */
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 .badge-unchecked { background-color: #f97316; } 
 .badge-waiting { background-color: #eab308; }   
@@ -43,7 +42,6 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .btn-close-action { background-color: #f97316; } 
 .btn-close-action:hover { background-color: #ea580c; }
 
-/* Review Detail View Styles */
 #reviewDetailView { display: none; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 .back-btn { display: inline-flex; align-items: center; gap: 8px; background: #eae4d7; border: 1px solid #dcd3c1; color: #222; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
 .review-content { font-size: 1.05rem; line-height: 1.6; color: #333; margin-bottom: 25px; }
@@ -66,7 +64,6 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 <div class="admin-container">
     <h1 class="admin-title">ADM | WINDS-DEV</h1>
 
-    <!-- MAIN DASHBOARD VIEW -->
     <div id="mainDashboardView">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -79,17 +76,12 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
             <button class="filter-btn" onclick="setFilter('Report', this)">Report</button>
         </div>
 
-        <div class="tickets-list" id="ticketsContainer">
-            <!-- Tickets loaded dynamically -->
-        </div>
+        <div class="tickets-list" id="ticketsContainer"></div>
     </div>
 
-    <!-- REVIEW DETAIL VIEW -->
     <div id="reviewDetailView">
         <button class="back-btn" onclick="goBackToDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <div class="review-content" id="reviewContentBody">
-            <!-- Dynamic Ticket Details -->
-        </div>
+        <div class="review-content" id="reviewContentBody"></div>
     </div>
 </div>
 
@@ -128,13 +120,9 @@ function loadTickets() {
 
     filtered.forEach((t) => {
         const cardClass = t.type === 'Tech-Issue' ? 'tech' : 'report';
-        
-        let statusHTML = '';
-        if (t.status === 'Closed' || t.status === 'closed') {
-            statusHTML = `<span class="badge badge-closed">Closed</span>`;
-        } else {
-            statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
-        }
+        let statusHTML = (t.status === 'Closed' || t.status === 'closed') 
+            ? `<span class="badge badge-closed">Closed</span>` 
+            : `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
 
         const card = document.createElement('div');
         card.className = `ticket-card ${cardClass}`;
@@ -163,8 +151,7 @@ function openReview(id) {
     document.getElementById('mainDashboardView').style.display = 'none';
     document.getElementById('reviewDetailView').style.display = 'block';
 
-    const reviewBody = document.getElementById('reviewContentBody');
-    reviewBody.innerHTML = `
+    document.getElementById('reviewContentBody').innerHTML = `
         <p><strong>USER NAME -</strong> ${t.name}</p>
         <p><strong>USER ISSUE -</strong> ${t.issue}</p>
         <p><strong>DESCRIPTION -</strong><br>${t.desc || 'No description provided.'}</p>
@@ -186,7 +173,7 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-// Secure Obfuscated API Key Integration (Bypasses GitHub Scanner)
+// Calls Secure Backend Serverless Function (/api/send-mail)
 function sendAnswerMail(userEmail, userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
@@ -194,55 +181,24 @@ function sendAnswerMail(userEmail, userName) {
         return;
     }
 
-    const part1 = 're_X6kVKY5Y_';
-    const part2 = 'DyVAAQ3bx8P9H5hZkg2SE11j';
-    const RESEND_API_KEY = part1 + part2;
-
-    const payload = {
-        from: 'WINDS Development <onboarding@resend.dev>',
-        to: [userEmail],
-        subject: 'Response to your Support Ticket | WINDS-DEV',
-        html: `
-            <div style="font-family: Arial, sans-serif; color: #222222; padding: 20px; line-height: 1.6;">
-                <p>Hello Dear,</p>
-                <p><strong>${userName}</strong></p>
-                <div style="margin: 20px 0; font-size: 1rem; color: #333333;">
-                    ${answerText}
-                </div>
-                <div style="margin-top: 30px;">
-                    <a href="https://dc.gg/winds.dev" target="_blank" style="background-color: #e63946; color: #ffffff; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">
-                        MEET US
-                    </a>
-                </div>
-            </div>
-        `
-    };
-
-    fetch('https://api.resend.com/emails', {
+    fetch('/api/send-mail', {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${RESEND_API_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userEmail, userName, answerText })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.id) {
-            alert('Mail sent successfully via Resend!');
-            
+        if (data.success) {
+            alert('Mail sent successfully via Serverless Backend!');
             let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
             tickets = tickets.map(t => {
-                if (t.id === currentActiveTicketId) {
-                    t.status = 'Closed';
-                }
+                if (t.id === currentActiveTicketId) t.status = 'Closed';
                 return t;
             });
             localStorage.setItem('winds_tickets', JSON.stringify(tickets));
-
             goBackToDashboard();
         } else {
-            alert('RESEND ERROR: ' + JSON.stringify(data));
+            alert('ERROR: ' + JSON.stringify(data.error));
         }
     })
     .catch(error => {
@@ -260,11 +216,7 @@ function goBackToDashboard() {
 function updateStatus(id, action) {
     let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
     tickets = tickets.map(t => {
-        if (t.id === id) {
-            if (action === 'close') {
-                t.status = 'Closed';
-            }
-        }
+        if (t.id === id && action === 'close') t.status = 'Closed';
         return t;
     });
     localStorage.setItem('winds_tickets', JSON.stringify(tickets));
@@ -278,9 +230,7 @@ function setFilter(filter, btn) {
     loadTickets();
 }
 
-function filterTickets() {
-    loadTickets();
-}
+function filterTickets() { loadTickets(); }
 
 window.onload = loadTickets;
 </script>

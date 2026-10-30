@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADM | WINDS-DEV</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<!-- EmailJS SDK -->
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script type="text/javascript">
+   (function(){
+      emailjs.init("--KaeiPgLeJyHPRdj");
+   })();
+</script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 body { background-color: #f6f3eb; color: #222222; padding: 20px; }
@@ -30,6 +37,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .ticket-info { font-size: 0.95rem; color: #444444; margin-bottom: 8px; line-height: 1.5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ticket-info strong { color: #111111; font-weight: 700; }
 
+/* Status Badge Styles */
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 .badge-unchecked { background-color: #f97316; } 
 .badge-waiting { background-color: #eab308; }   
@@ -42,6 +50,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .btn-close-action { background-color: #f97316; } 
 .btn-close-action:hover { background-color: #ea580c; }
 
+/* Review Detail View Styles */
 #reviewDetailView { display: none; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 16px; padding: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
 .back-btn { display: inline-flex; align-items: center; gap: 8px; background: #eae4d7; border: 1px solid #dcd3c1; color: #222; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; margin-bottom: 20px; }
 .review-content { font-size: 1.05rem; line-height: 1.6; color: #333; margin-bottom: 25px; }
@@ -64,6 +73,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 <div class="admin-container">
     <h1 class="admin-title">ADM | WINDS-DEV</h1>
 
+    <!-- MAIN DASHBOARD VIEW -->
     <div id="mainDashboardView">
         <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -76,12 +86,17 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
             <button class="filter-btn" onclick="setFilter('Report', this)">Report</button>
         </div>
 
-        <div class="tickets-list" id="ticketsContainer"></div>
+        <div class="tickets-list" id="ticketsContainer">
+            <!-- Tickets loaded dynamically -->
+        </div>
     </div>
 
+    <!-- REVIEW DETAIL VIEW -->
     <div id="reviewDetailView">
         <button class="back-btn" onclick="goBackToDashboard()"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</button>
-        <div class="review-content" id="reviewContentBody"></div>
+        <div class="review-content" id="reviewContentBody">
+            <!-- Dynamic Ticket Details -->
+        </div>
     </div>
 </div>
 
@@ -120,9 +135,13 @@ function loadTickets() {
 
     filtered.forEach((t) => {
         const cardClass = t.type === 'Tech-Issue' ? 'tech' : 'report';
-        let statusHTML = (t.status === 'Closed' || t.status === 'closed') 
-            ? `<span class="badge badge-closed">Closed</span>` 
-            : `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
+        
+        let statusHTML = '';
+        if (t.status === 'Closed' || t.status === 'closed') {
+            statusHTML = `<span class="badge badge-closed">Closed</span>`;
+        } else {
+            statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
+        }
 
         const card = document.createElement('div');
         card.className = `ticket-card ${cardClass}`;
@@ -151,7 +170,8 @@ function openReview(id) {
     document.getElementById('mainDashboardView').style.display = 'none';
     document.getElementById('reviewDetailView').style.display = 'block';
 
-    document.getElementById('reviewContentBody').innerHTML = `
+    const reviewBody = document.getElementById('reviewContentBody');
+    reviewBody.innerHTML = `
         <p><strong>USER NAME -</strong> ${t.name}</p>
         <p><strong>USER ISSUE -</strong> ${t.issue}</p>
         <p><strong>DESCRIPTION -</strong><br>${t.desc || 'No description provided.'}</p>
@@ -173,7 +193,6 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-// Calls Secure Backend Serverless Function (/api/send-mail)
 function sendAnswerMail(userEmail, userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
@@ -181,29 +200,30 @@ function sendAnswerMail(userEmail, userName) {
         return;
     }
 
-    fetch('/api/send-mail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userEmail, userName, answerText })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Mail sent successfully via Serverless Backend!');
+    const templateParams = {
+        to_email: userEmail,
+        to_name: userName,
+        message: answerText
+    };
+
+    emailjs.send('service_mnyq4vg', 'template_jy3rdbm', templateParams)
+        .then(function(response) {
+            alert('Mail sent successfully from developmentwinds@gmail.com!');
+            
             let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
             tickets = tickets.map(t => {
-                if (t.id === currentActiveTicketId) t.status = 'Closed';
+                if (t.id === currentActiveTicketId) {
+                    t.status = 'Closed';
+                }
                 return t;
             });
             localStorage.setItem('winds_tickets', JSON.stringify(tickets));
+
             goBackToDashboard();
-        } else {
-            alert('ERROR: ' + JSON.stringify(data.error));
-        }
-    })
-    .catch(error => {
-        alert('FETCH ERROR: ' + error.message);
-    });
+        }, function(error) {
+            alert('EMAILJS ERROR: ' + JSON.stringify(error));
+            console.error('FAILED...', error);
+        });
 }
 
 function goBackToDashboard() {
@@ -216,7 +236,11 @@ function goBackToDashboard() {
 function updateStatus(id, action) {
     let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
     tickets = tickets.map(t => {
-        if (t.id === id && action === 'close') t.status = 'Closed';
+        if (t.id === id) {
+            if (action === 'close') {
+                t.status = 'Closed';
+            }
+        }
         return t;
     });
     localStorage.setItem('winds_tickets', JSON.stringify(tickets));
@@ -230,7 +254,9 @@ function setFilter(filter, btn) {
     loadTickets();
 }
 
-function filterTickets() { loadTickets(); }
+function filterTickets() {
+    loadTickets();
+}
 
 window.onload = loadTickets;
 </script>

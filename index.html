@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADM | WINDS-DEV</title>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<!-- Supabase JS Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- EmailJS SDK -->
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script type="text/javascript">
@@ -87,7 +89,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
         </div>
 
         <div class="tickets-list" id="ticketsContainer">
-            <!-- Tickets loaded dynamically -->
+            <!-- Tickets loaded dynamically from Supabase -->
         </div>
     </div>
 
@@ -101,30 +103,44 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 </div>
 
 <script>
+// Supabase Configuration
+const SUPABASE_URL = 'https://boqabjzjfzjudcmzhzac.supabase.co';
+const SUPABASE_PUB_KEY = 'sb_publishable_2tkZzCP-Tc3a8OQJzbuTWg_qGsX-7D0';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUB_KEY);
+
 let currentFilter = 'all';
 let currentActiveTicketId = null;
+let allTicketsCache = [];
 
-function loadTickets() {
+async function loadTickets() {
     const container = document.getElementById('ticketsContainer');
-    
-    const dummyTickets = [
-        { id: 1, type: 'Tech-Issue', name: 'Sadiq_Ahmed', email: 'notsk342@gmail.com', issue: 'WEBSITE ISSUE', time: '30/10/2026, 14:00:00', status: ['unchecked', 'waiting'], desc: 'Google login redirect issue on mobile browser while testing kiwi browser.' },
-        { id: 2, type: 'Report', name: 'THUNDER', email: 'player123@gmail.com', issue: 'HACKING / CHEATING', time: '30/10/2026, 14:05:00', status: ['unchecked', 'waiting'], desc: 'Player was using speedhack in match near training ground.' }
-    ];
-    
-    if (!localStorage.getItem('winds_tickets')) {
-        localStorage.setItem('winds_tickets', JSON.stringify(dummyTickets));
+    container.innerHTML = '<div class="no-tickets">Loading tickets from database...</div>';
+
+    const { data: tickets, error } = await supabaseClient
+        .from('tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        container.innerHTML = `<div class="no-tickets" style="color:red;">Error loading tickets: ${error.message}</div>`;
+        return;
     }
 
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
+    allTicketsCache = tickets || [];
+    renderFilteredTickets();
+}
+
+function renderFilteredTickets() {
+    const container = document.getElementById('ticketsContainer');
     container.innerHTML = '';
     const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
 
-    const filtered = tickets.filter(t => {
-        const matchesFilter = currentFilter === 'all' || t.type === currentFilter;
-        const matchesSearch = t.name.toLowerCase().includes(searchQuery) || 
-                              t.email.toLowerCase().includes(searchQuery) || 
-                              t.issue.toLowerCase().includes(searchQuery);
+    const filtered = allTicketsCache.filter(t => {
+        // Map issue type or category if needed
+        const matchesFilter = currentFilter === 'all' || (t.issue_type && t.issue_type.includes(currentFilter));
+        const matchesSearch = (t.name && t.name.toLowerCase().includes(searchQuery)) || 
+                              (t.message && t.message.toLowerCase().includes(searchQuery)) || 
+                              (t.issue_type && t.issue_type.toLowerCase().includes(searchQuery));
         return matchesFilter && matchesSearch;
     });
 
@@ -134,7 +150,7 @@ function loadTickets() {
     }
 
     filtered.forEach((t) => {
-        const cardClass = t.type === 'Tech-Issue' ? 'tech' : 'report';
+        const cardClass = 'tech';
         
         let statusHTML = '';
         if (t.status === 'Closed' || t.status === 'closed') {
@@ -146,10 +162,9 @@ function loadTickets() {
         const card = document.createElement('div');
         card.className = `ticket-card ${cardClass}`;
         card.innerHTML = `
-            <div class="ticket-header">#${t.id} - ${t.name}</div>
-            <div class="ticket-info"><strong>Email -</strong> ${t.email}</div>
-            <div class="ticket-info"><strong>Issue -</strong> ${t.issue}</div>
-            <div class="ticket-info"><strong>Time -</strong> ${t.time}</div>
+            <div class="ticket-header">Ticket #${t.id} - ${t.name || 'Anonymous'}</div>
+            <div class="ticket-info"><strong>Issue Type -</strong> ${t.issue_type || 'GENERAL'}</div>
+            <div class="ticket-info"><strong>Time -</strong> ${new Date(t.created_at).toLocaleString()}</div>
             <div class="ticket-info"><strong>Status -</strong> ${statusHTML}</div>
             
             <div class="ticket-actions">
@@ -163,8 +178,7 @@ function loadTickets() {
 
 function openReview(id) {
     currentActiveTicketId = id;
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-    const t = tickets.find(ticket => ticket.id === id);
+    const t = allTicketsCache.find(ticket => ticket.id === id);
     if (!t) return;
 
     document.getElementById('mainDashboardView').style.display = 'none';
@@ -172,16 +186,17 @@ function openReview(id) {
 
     const reviewBody = document.getElementById('reviewContentBody');
     reviewBody.innerHTML = `
-        <p><strong>USER NAME -</strong> ${t.name}</p>
-        <p><strong>USER ISSUE -</strong> ${t.issue}</p>
-        <p><strong>DESCRIPTION -</strong><br>${t.desc || 'No description provided.'}</p>
+        <p><strong>USER NAME -</strong> ${t.name || 'Anonymous'}</p>
+        <p><strong>ISSUE TYPE -</strong> ${t.issue_type || 'GENERAL'}</p>
+        <p><strong>SUBMITTED AT -</strong> ${new Date(t.created_at).toLocaleString()}</p>
+        <p><strong>MESSAGE / DESCRIPTION -</strong><br>${t.message || 'No description provided.'}</p>
         <div style="margin-top: 20px; overflow: hidden;">
             <button class="btn-green-answer" onclick="toggleAnswerBox()">Answer</button>
         </div>
         <div class="answer-box-wrap" id="answerBoxContainer">
             <textarea id="adminAnswerText" placeholder="Write your answer here..."></textarea>
             <div style="overflow: hidden;">
-                <button class="btn-send-mail" onclick="sendAnswerMail('${t.email}', '${t.name}')">SEND</button>
+                <button class="btn-send-mail" onclick="sendAnswerMail('${t.name}')">SEND</button>
             </div>
         </div>
     `;
@@ -193,69 +208,59 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-function sendAnswerMail(userEmail, userName) {
+async function sendAnswerMail(userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
         alert('Please write an answer before sending!');
         return;
     }
 
-    const templateParams = {
-        to_email: userEmail,
-        to_name: userName,
-        message: answerText
-    };
+    // Update status in Supabase to Closed
+    const { error } = await supabaseClient
+        .from('tickets')
+        .update({ status: 'Closed' })
+        .eq('id', currentActiveTicketId);
 
-    emailjs.send('service_mnyq4vg', 'template_jy3rdbm', templateParams)
-        .then(function(response) {
-            alert('Mail sent successfully from developmentwinds@gmail.com!');
-            
-            let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-            tickets = tickets.map(t => {
-                if (t.id === currentActiveTicketId) {
-                    t.status = 'Closed';
-                }
-                return t;
-            });
-            localStorage.setItem('winds_tickets', JSON.stringify(tickets));
+    if (error) {
+        alert('Error updating ticket status: ' + error.message);
+        return;
+    }
 
-            goBackToDashboard();
-        }, function(error) {
-            alert('EMAILJS ERROR: ' + JSON.stringify(error));
-            console.error('FAILED...', error);
-        });
+    alert('Ticket marked as Closed successfully in database!');
+    goBackToDashboard();
 }
 
-function goBackToDashboard() {
+async function goBackToDashboard() {
     document.getElementById('reviewDetailView').style.display = 'none';
     document.getElementById('mainDashboardView').style.display = 'block';
     currentActiveTicketId = null;
     loadTickets();
 }
 
-function updateStatus(id, action) {
-    let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
-    tickets = tickets.map(t => {
-        if (t.id === id) {
-            if (action === 'close') {
-                t.status = 'Closed';
-            }
+async function updateStatus(id, action) {
+    if (action === 'close') {
+        const { error } = await supabaseClient
+            .from('tickets')
+            .update({ status: 'Closed' })
+            .eq('id', id);
+
+        if (error) {
+            alert('Failed to close ticket: ' + error.message);
+            return;
         }
-        return t;
-    });
-    localStorage.setItem('winds_tickets', JSON.stringify(tickets));
-    loadTickets();
+        loadTickets();
+    }
 }
 
 function setFilter(filter, btn) {
     currentFilter = filter;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    loadTickets();
+    renderFilteredTickets();
 }
 
 function filterTickets() {
-    loadTickets();
+    renderFilteredTickets();
 }
 
 window.onload = loadTickets;

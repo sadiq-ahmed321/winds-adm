@@ -186,7 +186,7 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-// Brevo API Integration Function (0% Watermark & Direct Delivery)
+// Resend API Integration Function (0% Watermark & No Phone Lock)
 function sendAnswerMail(userEmail, userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
@@ -194,21 +194,13 @@ function sendAnswerMail(userEmail, userName) {
         return;
     }
 
-    const BREVO_API_KEY = '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';
+    const RESEND_API_KEY = 're_DUrRxFL1_DLxPa4UxDXS4YCEvkMv7QWz6';
 
     const payload = {
-        sender: {
-            name: "WINDS Development",
-            email: "developmentwinds@gmail.com"
-        },
-        to: [
-            {
-                email: userEmail,
-                name: userName
-            }
-        ],
-        subject: "Response to your Support Ticket | WINDS-DEV",
-        htmlContent: `
+        from: 'WINDS Development <onboarding@resend.dev>',
+        to: [userEmail],
+        subject: 'Response to your Support Ticket | WINDS-DEV',
+        html: `
             <div style="font-family: Arial, sans-serif; color: #222222; padding: 20px; line-height: 1.6;">
                 <p>Hello Dear,</p>
                 <p><strong>${userName}</strong></p>
@@ -224,19 +216,18 @@ function sendAnswerMail(userEmail, userName) {
         `
     };
 
-    fetch('https://api.brevo.com/v3/smtp/email', {
+    fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-            'accept': 'application/json',
-            'api-key': BREVO_API_KEY,
-            'content-type': 'application/json'
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
     })
     .then(response => response.json())
     .then(data => {
-        if (data.messageId) {
-            alert('Mail sent successfully via Brevo (No Watermark)!');
+        if (data.id) {
+            alert('Mail sent successfully via Resend (No Watermark)!');
             
             let tickets = JSON.parse(localStorage.getItem('winds_tickets')) || [];
             tickets = tickets.map(t => {
@@ -249,7 +240,7 @@ function sendAnswerMail(userEmail, userName) {
 
             goBackToDashboard();
         } else {
-            alert('BREVO ERROR: ' + JSON.stringify(data));
+            alert('RESEND ERROR: ' + JSON.stringify(data));
         }
     })
     .catch(error => {

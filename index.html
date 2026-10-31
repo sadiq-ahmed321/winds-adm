@@ -161,7 +161,6 @@ function renderFilteredTickets() {
     container.innerHTML = '';
     const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
 
-    // Filter
     let filtered = allTicketsCache.filter(t => {
         const issue = (t.issue_type || '').toUpperCase();
         let matchesCategory = true;
@@ -186,12 +185,14 @@ function renderFilteredTickets() {
         return matchesCategory && matchesSearch && matchesExtra;
     });
 
-    // Sort by Latest / Oldest using database id or created_at
+    // Sort Latest / Oldest
     filtered.sort((a, b) => {
+        const idA = a.id || 0;
+        const idB = b.id || 0;
         if (currentSortFilter === 'oldest') {
-            return (a.id || 0) - (b.id || 0); // Purana upar
+            return idA - idB;
         } else {
-            return (b.id || 0) - (a.id || 0); // Latest upar (Default)
+            return idB - idA; // Latest upar
         }
     });
 
@@ -208,7 +209,6 @@ function renderFilteredTickets() {
             statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
         }
 
-        // Ticket numbering like #1, #2 based on position or real id
         const displayId = t.id || (index + 1);
         const userName = t.name || 'Anonymous';
 
@@ -271,11 +271,11 @@ async function sendAnswerMail(id) {
         .eq('id', id);
 
     if (error) {
-        alert('Error updating ticket status: ' + error.message);
+        alert('Error updating status: ' + error.message);
         return;
     }
 
-    alert('Ticket marked as Closed successfully!');
+    alert('Reply sent and ticket closed successfully!');
     goBackToDashboard();
 }
 

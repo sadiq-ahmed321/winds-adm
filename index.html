@@ -21,9 +21,17 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .admin-container { max-width: 800px; margin: 0 auto; }
 .admin-title { text-align: center; font-size: 2rem; font-weight: 900; color: #e63946; margin-bottom: 25px; letter-spacing: 1px; text-transform: uppercase; }
 
-.search-box { position: relative; margin-bottom: 15px; }
+.top-controls { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+.search-box { position: relative; flex-grow: 1; }
 .search-box input { width: 100%; padding: 14px 20px 14px 45px; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; font-size: 1rem; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #666055; font-size: 1.1rem; }
+
+.filter-dropdown-wrap { position: relative; }
+.filter-emoji-btn { background: #ffffff; border: 1px solid #dcd3c1; padding: 14px 18px; border-radius: 12px; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.filter-dropdown-menu { display: none; position: absolute; right: 0; top: 55px; background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); z-index: 100; width: 160px; overflow: hidden; }
+.filter-dropdown-menu.active { display: block; }
+.filter-option { padding: 12px 16px; font-size: 0.9rem; font-weight: 700; color: #222; cursor: pointer; border-bottom: 1px solid #f0ede6; transition: 0.2s; }
+.filter-option:hover { background: #f6f3eb; color: #e63946; }
 
 .filters-bar { display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 5px; }
 .filter-btn { background: #eae4d7; border: 1px solid #dcd3c1; color: #222222; padding: 8px 18px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
@@ -73,15 +81,26 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
     <h1 class="admin-title">ADM | WINDS-DEV</h1>
 
     <div id="mainDashboardView">
-        <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="adminSearch" placeholder="Search by name, email, or issue..." oninput="filterTickets()">
+        <div class="top-controls">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="adminSearch" placeholder="Search by name or issue..." oninput="filterTickets()">
+            </div>
+            <div class="filter-dropdown-wrap">
+                <button class="filter-emoji-btn" onclick="toggleFilterMenu()">⚙️</button>
+                <div class="filter-dropdown-menu" id="filterMenu">
+                    <div class="filter-option" onclick="applySortFilter('latest')">🕒 Latest</div>
+                    <div class="filter-option" onclick="applySortFilter('oldest')">⏳ Oldest</div>
+                    <div class="filter-option" onclick="applySortFilter('unchecked')">🟠 Unchecked</div>
+                    <div class="filter-option" onclick="applySortFilter('closed')">🔴 Closed</div>
+                </div>
+            </div>
         </div>
 
         <div class="filters-bar">
-            <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
-            <button class="filter-btn" onclick="setFilter('Tech-Issue', this)">Tech-Issue</button>
-            <button class="filter-btn" onclick="setFilter('Report', this)">Report</button>
+            <button class="filter-btn active" onclick="setCategoryFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setCategoryFilter('Tech-Issue', this)">Tech-Issue</button>
+            <button class="filter-btn" onclick="setCategoryFilter('Report', this)">Report</button>
         </div>
 
         <div class="tickets-list" id="ticketsContainer"></div>
@@ -98,8 +117,8 @@ const SUPABASE_URL = 'https://boqabjzjfzjudcmzhzac.supabase.co';
 const SUPABASE_PUB_KEY = 'sb_publishable_2tkZzCP-Tc3a8OQJzbuTWg_qGsX-7D0';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUB_KEY);
 
-let currentFilter = 'all';
-let currentActiveTicketId = null;
+let currentCategory = 'all';
+let currentSortFilter = 'latest';
 let allTicketsCache = [];
 
 async function loadTickets() {
@@ -119,16 +138,61 @@ async function loadTickets() {
     renderFilteredTickets();
 }
 
+function toggleFilterMenu() {
+    const menu = document.getElementById('filterMenu');
+    menu.classList.toggle('active');
+}
+
+function applySortFilter(type) {
+    currentSortFilter = type;
+    toggleFilterMenu();
+    renderFilteredTickets();
+}
+
+function setCategoryFilter(cat, btn) {
+    currentCategory = cat;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFilteredTickets();
+}
+
 function renderFilteredTickets() {
     const container = document.getElementById('ticketsContainer');
     container.innerHTML = '';
     const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
 
-    const filtered = allTicketsCache.filter(t => {
+    // Filter
+    let filtered = allTicketsCache.filter(t => {
+        const issue = (t.issue_type || '').toUpperCase();
+        let matchesCategory = true;
+
+        if (currentCategory === 'Tech-Issue') {
+            matchesCategory = ['BUG', 'WEBSITE ISSUE', 'IN-GAME ISSUE', 'DISCORD COMMUNITY', 'OTHER'].includes(issue);
+        } else if (currentCategory === 'Report') {
+            matchesCategory = ['HACKING / CHEATING', 'ABUSIVE BEHAVIOR', 'IN-GAME SCAM'].includes(issue);
+        }
+
         const matchesSearch = (t.name && t.name.toLowerCase().includes(searchQuery)) || 
                               (t.message && t.message.toLowerCase().includes(searchQuery)) || 
                               (t.issue_type && t.issue_type.toLowerCase().includes(searchQuery));
-        return matchesSearch;
+
+        let matchesExtra = true;
+        if (currentSortFilter === 'unchecked') {
+            matchesExtra = t.status !== 'Closed';
+        } else if (currentSortFilter === 'closed') {
+            matchesExtra = t.status === 'Closed';
+        }
+
+        return matchesCategory && matchesSearch && matchesExtra;
+    });
+
+    // Sort by Latest / Oldest using database id or created_at
+    filtered.sort((a, b) => {
+        if (currentSortFilter === 'oldest') {
+            return (a.id || 0) - (b.id || 0); // Purana upar
+        } else {
+            return (b.id || 0) - (a.id || 0); // Latest upar (Default)
+        }
     });
 
     if (filtered.length === 0) {
@@ -136,7 +200,7 @@ function renderFilteredTickets() {
         return;
     }
 
-    filtered.forEach((t) => {
+    filtered.forEach((t, index) => {
         let statusHTML = '';
         if (t.status === 'Closed' || t.status === 'closed') {
             statusHTML = `<span class="badge badge-closed">Closed</span>`;
@@ -144,10 +208,14 @@ function renderFilteredTickets() {
             statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
         }
 
+        // Ticket numbering like #1, #2 based on position or real id
+        const displayId = t.id || (index + 1);
+        const userName = t.name || 'Anonymous';
+
         const card = document.createElement('div');
         card.className = `ticket-card tech`;
         card.innerHTML = `
-            <div class="ticket-header">Ticket #${t.id} - ${t.name || 'Anonymous'}</div>
+            <div class="ticket-header">Ticket #${displayId} - ${userName}</div>
             <div class="ticket-info"><strong>Issue Type -</strong> ${t.issue_type || 'GENERAL'}</div>
             <div class="ticket-info"><strong>Status -</strong> ${statusHTML}</div>
             
@@ -161,7 +229,6 @@ function renderFilteredTickets() {
 }
 
 function openReview(id) {
-    currentActiveTicketId = id;
     const t = allTicketsCache.find(ticket => ticket.id === id);
     if (!t) return;
 
@@ -179,7 +246,7 @@ function openReview(id) {
         <div class="answer-box-wrap" id="answerBoxContainer">
             <textarea id="adminAnswerText" placeholder="Write your answer here..."></textarea>
             <div style="overflow: hidden;">
-                <button class="btn-send-mail" onclick="sendAnswerMail('${t.name}')">SEND</button>
+                <button class="btn-send-mail" onclick="sendAnswerMail(${t.id})">SEND</button>
             </div>
         </div>
     `;
@@ -191,7 +258,7 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-async function sendAnswerMail(userName) {
+async function sendAnswerMail(id) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
         alert('Please write an answer before sending!');
@@ -201,7 +268,7 @@ async function sendAnswerMail(userName) {
     const { error } = await supabaseClient
         .from('tickets')
         .update({ status: 'Closed' })
-        .eq('id', currentActiveTicketId);
+        .eq('id', id);
 
     if (error) {
         alert('Error updating ticket status: ' + error.message);
@@ -215,7 +282,6 @@ async function sendAnswerMail(userName) {
 async function goBackToDashboard() {
     document.getElementById('reviewDetailView').style.display = 'none';
     document.getElementById('mainDashboardView').style.display = 'block';
-    currentActiveTicketId = null;
     loadTickets();
 }
 
@@ -232,13 +298,6 @@ async function updateStatus(id, action) {
         }
         loadTickets();
     }
-}
-
-function setFilter(filter, btn) {
-    currentFilter = filter;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderFilteredTickets();
 }
 
 function filterTickets() {

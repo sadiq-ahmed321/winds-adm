@@ -41,6 +41,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 
 .ticket-card { background: #ffffff; border: 1px solid #dcd3c1; border-radius: 12px; padding: 20px 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; border-left: 6px solid #e63946; }
 .ticket-card.tech { border-left-color: #ffb703; }
+.ticket-card.report { border-left-color: #e63946; }
 
 .ticket-header { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
 .ticket-info { font-size: 0.95rem; color: #444444; margin-bottom: 8px; line-height: 1.5; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -49,6 +50,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
 .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 5px; }
 .badge-unchecked { background-color: #f97316; } 
 .badge-waiting { background-color: #eab308; }   
+.badge-checked { background-color: #22c55e; }    
 .badge-closed { background-color: #ef4444; }    
 
 .ticket-actions { margin-top: 15px; display: flex; gap: 10px; border-top: 1px solid #f0ede6; padding-top: 12px; flex-wrap: wrap; }
@@ -92,6 +94,7 @@ body { background-color: #f6f3eb; color: #222222; padding: 20px; }
                     <div class="filter-option" onclick="applySortFilter('latest')">🕒 Latest</div>
                     <div class="filter-option" onclick="applySortFilter('oldest')">⏳ Oldest</div>
                     <div class="filter-option" onclick="applySortFilter('unchecked')">🟠 Unchecked</div>
+                    <div class="filter-option" onclick="applySortFilter('checked')">🟢 Checked</div>
                     <div class="filter-option" onclick="applySortFilter('closed')">🔴 Closed</div>
                 </div>
             </div>
@@ -156,19 +159,24 @@ function setCategoryFilter(cat, btn) {
     renderFilteredTickets();
 }
 
+function isReportIssue(issue) {
+    const reports = ['HACKING / CHEATING', 'ABUSIVE BEHAVIOR', 'IN-GAME SCAM'];
+    return reports.includes((issue || '').toUpperCase());
+}
+
 function renderFilteredTickets() {
     const container = document.getElementById('ticketsContainer');
     container.innerHTML = '';
     const searchQuery = document.getElementById('adminSearch').value.toLowerCase();
 
     let filtered = allTicketsCache.filter(t => {
-        const issue = (t.issue_type || '').toUpperCase();
+        const isRep = isReportIssue(t.issue_type);
         let matchesCategory = true;
 
         if (currentCategory === 'Tech-Issue') {
-            matchesCategory = ['BUG', 'WEBSITE ISSUE', 'IN-GAME ISSUE', 'DISCORD COMMUNITY', 'OTHER'].includes(issue);
+            matchesCategory = !isRep;
         } else if (currentCategory === 'Report') {
-            matchesCategory = ['HACKING / CHEATING', 'ABUSIVE BEHAVIOR', 'IN-GAME SCAM'].includes(issue);
+            matchesCategory = isRep;
         }
 
         const matchesSearch = (t.name && t.name.toLowerCase().includes(searchQuery)) || 
@@ -176,16 +184,18 @@ function renderFilteredTickets() {
                               (t.issue_type && t.issue_type.toLowerCase().includes(searchQuery));
 
         let matchesExtra = true;
+        const st = (t.status || 'unchecked').toLowerCase();
         if (currentSortFilter === 'unchecked') {
-            matchesExtra = t.status !== 'Closed';
+            matchesExtra = st === 'unchecked';
+        } else if (currentSortFilter === 'checked') {
+            matchesExtra = st === 'checked';
         } else if (currentSortFilter === 'closed') {
-            matchesExtra = t.status === 'Closed';
+            matchesExtra = st === 'closed';
         }
 
         return matchesCategory && matchesSearch && matchesExtra;
     });
 
-    // Sort Latest / Oldest
     filtered.sort((a, b) => {
         const idA = a.id || 0;
         const idB = b.id || 0;
@@ -202,18 +212,24 @@ function renderFilteredTickets() {
     }
 
     filtered.forEach((t, index) => {
+        const isRep = isReportIssue(t.issue_type);
+        const cardClass = isRep ? 'report' : 'tech';
+
         let statusHTML = '';
-        if (t.status === 'Closed' || t.status === 'closed') {
+        const st = (t.status || 'unchecked').toLowerCase();
+        if (st === 'closed') {
             statusHTML = `<span class="badge badge-closed">Closed</span>`;
+        } else if (st === 'checked') {
+            statusHTML = `<span class="badge badge-checked">Checked</span>`;
         } else {
-            statusHTML = `<span class="badge badge-unchecked">unchecked</span> <span class="badge badge-waiting">waiting</span>`;
+            statusHTML = `<span class="badge badge-unchecked">Unchecked</span> <span class="badge badge-waiting">Waiting</span>`;
         }
 
         const displayId = t.id || (index + 1);
         const userName = t.name || 'Anonymous';
 
         const card = document.createElement('div');
-        card.className = `ticket-card tech`;
+        card.className = `ticket-card ${cardClass}`;
         card.innerHTML = `
             <div class="ticket-header">Ticket #${displayId} - ${userName}</div>
             <div class="ticket-info"><strong>Issue Type -</strong> ${t.issue_type || 'GENERAL'}</div>
@@ -246,7 +262,7 @@ function openReview(id) {
         <div class="answer-box-wrap" id="answerBoxContainer">
             <textarea id="adminAnswerText" placeholder="Write your answer here..."></textarea>
             <div style="overflow: hidden;">
-                <button class="btn-send-mail" onclick="sendAnswerMail(${t.id})">SEND</button>
+                <button class="btn-send-mail" onclick="sendAnswerMail(${t.id}, '${t.name || 'User'}')">SEND</button>
             </div>
         </div>
     `;
@@ -258,25 +274,38 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-async function sendAnswerMail(id) {
+async function sendAnswerMail(id, userName) {
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
         alert('Please write an answer before sending!');
         return;
     }
 
-    const { error } = await supabaseClient
-        .from('tickets')
-        .update({ status: 'Closed' })
-        .eq('id', id);
+    // EmailJS parameters mapping
+    const templateParams = {
+        to_name: userName,
+        message: answerText,
+        reply_message: answerText
+    };
 
-    if (error) {
-        alert('Error updating status: ' + error.message);
-        return;
-    }
+    emailjs.send('service_mnyq4vg', 'template_jy3rdbm', templateParams)
+        .then(async function(response) {
+            // Update status to Checked in Supabase
+            const { error } = await supabaseClient
+                .from('tickets')
+                .update({ status: 'Checked' })
+                .eq('id', id);
 
-    alert('Reply sent and ticket closed successfully!');
-    goBackToDashboard();
+            if (error) {
+                alert('Mail sent, but error updating status in DB: ' + error.message);
+                return;
+            }
+
+            alert('Reply sent successfully and ticket marked as Checked!');
+            goBackToDashboard();
+        }, function(error) {
+            alert('EMAILJS ERROR: ' + JSON.stringify(error));
+        });
 }
 
 async function goBackToDashboard() {

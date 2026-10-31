@@ -233,6 +233,7 @@ function renderFilteredTickets() {
         card.innerHTML = `
             <div class="ticket-header">Ticket #${displayId} - ${userName}</div>
             <div class="ticket-info"><strong>Issue Type -</strong> ${t.issue_type || 'GENERAL'}</div>
+            <div class="ticket-info"><strong>Email -</strong> ${t.email || 'N/A'}</div>
             <div class="ticket-info"><strong>Status -</strong> ${statusHTML}</div>
             
             <div class="ticket-actions">
@@ -254,6 +255,7 @@ function openReview(id) {
     const reviewBody = document.getElementById('reviewContentBody');
     reviewBody.innerHTML = `
         <p><strong>USER NAME -</strong> ${t.name || 'Anonymous'}</p>
+        <p><strong>USER EMAIL -</strong> ${t.email || 'N/A'}</p>
         <p><strong>ISSUE TYPE -</strong> ${t.issue_type || 'GENERAL'}</p>
         <p><strong>MESSAGE / DESCRIPTION -</strong><br>${t.message || 'No description provided.'}</p>
         <div style="margin-top: 20px; overflow: hidden;">
@@ -262,7 +264,7 @@ function openReview(id) {
         <div class="answer-box-wrap" id="answerBoxContainer">
             <textarea id="adminAnswerText" placeholder="Write your answer here..."></textarea>
             <div style="overflow: hidden;">
-                <button class="btn-send-mail" onclick="sendAnswerMail(${t.id}, '${t.name || 'User'}')">SEND</button>
+                <button class="btn-send-mail" onclick="sendAnswerMail(${t.id}, '${t.name || 'User'}', '${t.email || ''}')">SEND</button>
             </div>
         </div>
     `;
@@ -274,15 +276,20 @@ function toggleAnswerBox() {
     box.style.display = box.style.display === 'block' ? 'none' : 'block';
 }
 
-async function sendAnswerMail(id, userName) {
+async function sendAnswerMail(id, userName, userEmail) {
+    if (!userEmail) {
+        alert('User email is missing for this ticket!');
+        return;
+    }
+
     const answerText = document.getElementById('adminAnswerText').value;
     if (!answerText.trim()) {
         alert('Please write an answer before sending!');
         return;
     }
 
-    // EmailJS parameters mapping
     const templateParams = {
+        to_email: userEmail,
         to_name: userName,
         message: answerText,
         reply_message: answerText
@@ -290,7 +297,6 @@ async function sendAnswerMail(id, userName) {
 
     emailjs.send('service_mnyq4vg', 'template_jy3rdbm', templateParams)
         .then(async function(response) {
-            // Update status to Checked in Supabase
             const { error } = await supabaseClient
                 .from('tickets')
                 .update({ status: 'Checked' })
